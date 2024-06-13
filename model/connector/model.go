@@ -1,5 +1,13 @@
 package connector
 
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+
+	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/utils"
+)
+
 type ResultCode int
 
 const (
@@ -11,8 +19,41 @@ const (
 )
 
 type Request struct {
-	Params  string `json:"params"`
-	Context string `json:"context"`
+	Params  *DataSourceConfig `json:"params"`
+	Context string            `json:"context"`
+}
+
+func (req *Request) UnmarshalJSON(data []byte) error {
+	type Alias Request
+	alias := &struct {
+		*Alias
+		Params json.RawMessage `json:"params"`
+	}{
+		Alias: (*Alias)(req),
+	}
+
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+
+	unquote, err := strconv.Unquote(string(alias.Params))
+	if err != nil {
+		return err
+	}
+
+	// FIXME: 考虑用正则来优化
+	unquote = strings.ReplaceAll(unquote, "{\"datasourceConfig\":\"{", "{\"datasourceConfig\":{")
+	unquote = strings.ReplaceAll(unquote, "\"}\"}", "\"}}")
+
+	var params struct {
+		Config *DataSourceConfig `json:"datasourceConfig"`
+	}
+	if err = json.Unmarshal([]byte(unquote), &params); err != nil {
+		return err
+	}
+
+	req.Params = params.Config
+	return nil
 }
 
 type Response struct {
@@ -22,9 +63,11 @@ type Response struct {
 }
 
 type DataSourceConfig struct {
-	Item1  string `json:"config-item-1"`
-	Item2  string `json:"config-item-2"`
 	RssURL string `json:"rss-url"`
+}
+
+func (config *DataSourceConfig) Valid() bool {
+	return utils.IsValidHTTPURL(config.RssURL)
 }
 
 type RequestContext struct {

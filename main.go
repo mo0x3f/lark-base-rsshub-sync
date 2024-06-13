@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -30,12 +31,19 @@ func setupRouter() *gin.Engine {
 
 	// API: table meta
 	r.POST("/api/table_meta", func(c *gin.Context) {
-		req := &connector.Request{}
-		if err := c.ShouldBind(&req); err != nil {
+		data, err := io.ReadAll(c.Request.Body)
+		if err != nil {
 			log.Println(fmt.Sprintf("parse req err: %+v", err))
 			c.JSON(http.StatusOK, connector.NewFailResponse(connector.InternalErrCode, "invalid params"))
 			return
 		}
+		req := &connector.Request{}
+		if err := req.UnmarshalJSON(data); err != nil {
+			log.Println(fmt.Sprintf("parse req err: %+v", err))
+			c.JSON(http.StatusOK, connector.NewFailResponse(connector.InternalErrCode, "invalid params"))
+			return
+		}
+
 		log.Println(fmt.Sprintf("params: %s", req.Params))
 		log.Println(fmt.Sprintf("context: %s", req.Context))
 		c.JSON(http.StatusOK, handler.NewConnectorHandler().GetTableMeta(req))
