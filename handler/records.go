@@ -40,8 +40,10 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 			"url":  item.Link,
 		}
 		record.Data["author"] = item.Authors
-		record.Data["pubDate"] = item.PubDate
 		record.Data["category"] = item.CategoryList
+		if item.PubDate != 0 {
+			record.Data["pubDate"] = item.PubDate
+		}
 		result.Records = append(result.Records, record)
 	}
 

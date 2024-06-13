@@ -51,7 +51,12 @@ func (hub *rssHubServiceImpl) Fetch(subscribeURL string) (*Feed, error) {
 			Title:       v.Title,
 			Description: v.Description,
 			Link:        v.Link,
-			PubDate:     v.PublishedParsed.UnixMicro(),
+		}
+
+		if v.PublishedParsed == nil {
+			item.PubDate = 0
+		} else {
+			item.PubDate = v.PublishedParsed.Unix()
 		}
 
 		for _, author := range v.Authors {
