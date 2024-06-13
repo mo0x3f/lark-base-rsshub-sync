@@ -49,6 +49,13 @@ type Response struct {
 	Data interface{} `json:"data"`
 }
 
+type RequestParams struct {
+	Config        string `json:"datasourceConfig"`
+	TransactionID string `json:"transactionID"`
+	PageToken     string `json:"pageToken"`
+	MaxPageSize   int    `json:"maxPageSize"`
+}
+
 type DataSourceConfig struct {
 	RssURL string `json:"rss-url"`
 }
@@ -96,10 +103,25 @@ type TableMeta struct {
 }
 
 type Field struct {
-	FieldID     string `json:"fieldId"`
-	FieldName   string `json:"fieldName"`
-	FieldType   int    `json:"fieldType"`
-	IsPrimary   bool   `json:"isPrimary"`
-	Description string `json:"description"`
-	Property    string `json:"property,omitempty"`
+	FieldID     string    `json:"fieldId"`
+	FieldName   string    `json:"fieldName"`
+	FieldType   int       `json:"fieldType"`
+	IsPrimary   bool      `json:"isPrimary"`
+	Description string    `json:"description"`
+	Property    *Property `json:"property,omitempty"`
+}
+
+type Property struct {
+	Formatter string `json:"formatter,omitempty"`
+}
+
+type RecordsPage struct {
+	NextPageToken string    `json:"nextPageToken"`
+	HasMore       bool      `json:"hasMore"`
+	Records       []*Record `json:"records"`
+}
+
+type Record struct {
+	PrimaryID string                 `json:"primaryID"`
+	Data      map[string]interface{} `json:"data"`
 }

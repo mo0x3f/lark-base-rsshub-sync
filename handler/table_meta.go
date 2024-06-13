@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mmcdole/gofeed"
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
+	"github.com/mo0x3f/lark-base-rsshub-sync/service/rsshub"
 )
 
 func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *connector.Response {
@@ -17,9 +17,9 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 
 	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
 
-	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(config.RssURL)
+	feed, err := rsshub.NewService().Fetch(config.RssURL)
 	if err != nil {
+		log.Println(fmt.Sprintf("rss service err: %s", err.Error()))
 		return connector.NewFailResponse(connector.InternalErrCode, err.Error())
 	}
 
@@ -41,25 +41,28 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 			{
 				FieldID:   "link",
 				FieldName: "超链接",
-				FieldType: 1,
+				FieldType: 10,
 				IsPrimary: false,
 			},
 			{
 				FieldID:   "author",
 				FieldName: "作者",
-				FieldType: 1,
+				FieldType: 4,
 				IsPrimary: false,
 			},
 			{
 				FieldID:   "pubDate",
 				FieldName: "发布时间",
-				FieldType: 1,
+				FieldType: 5,
 				IsPrimary: false,
+				Property: &connector.Property{
+					Formatter: "yyyy/MM/dd",
+				},
 			},
 			{
 				FieldID:   "category",
 				FieldName: "分类",
-				FieldType: 1,
+				FieldType: 4,
 				IsPrimary: false,
 			},
 		},

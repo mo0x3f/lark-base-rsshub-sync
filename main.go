@@ -33,18 +33,21 @@ func setupRouter() *gin.Engine {
 		req := &connector.Request{}
 		if err := c.ShouldBind(req); err != nil {
 			log.Println(fmt.Sprintf("parse req err: %+v", err))
-			c.JSON(http.StatusOK, connector.NewFailResponse(connector.InternalErrCode, "invalid params"))
+			c.JSON(http.StatusOK, connector.NewFailResponse(connector.ConfigErrCode, "invalid params"))
 			return
 		}
-
-		log.Println(fmt.Sprintf("params: %s", req.Params))
-		log.Println(fmt.Sprintf("context: %s", req.Context))
 		c.JSON(http.StatusOK, handler.NewConnectorHandler().GetTableMeta(req))
 	})
 
 	// API: records
 	r.POST("/api/records", func(c *gin.Context) {
-		c.String(http.StatusOK, "records")
+		req := &connector.Request{}
+		if err := c.ShouldBind(req); err != nil {
+			log.Println(fmt.Sprintf("parse req err: %+v", err))
+			c.JSON(http.StatusOK, connector.NewFailResponse(connector.ConfigErrCode, "invalid params"))
+			return
+		}
+		c.JSON(http.StatusOK, handler.NewConnectorHandler().ListRecords(req))
 	})
 
 	return r
