@@ -4,7 +4,7 @@
     "type": "data_connector",
     "extraData": {
         "disabledPeriodicSync": false,
-        "dataSourceConfigUiUri": "https://ext.baseopendev.com/ext/data-sync-fe-demo/c70fa2864a002386423f26411f21a3c674bc2f9c/index.html",
+        "dataSourceConfigUiUri": "https://31a855b5-d085-4f75-9f75-13452dd241a5-00-lz45c9rsxvk7.pike.replit.dev/",
         "initHeight": 300,
         "initWidth": 520
     },
