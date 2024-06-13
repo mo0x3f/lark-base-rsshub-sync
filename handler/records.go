@@ -35,7 +35,10 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		}
 		record.Data["title"] = item.Title
 		record.Data["description"] = item.Description
-		record.Data["link"] = item.Link
+		record.Data["link"] = map[string]string{
+			"name": "跳转链接",
+			"url":  item.Link,
+		}
 		record.Data["author"] = item.Authors
 		record.Data["pubDate"] = item.PubDate
 		record.Data["category"] = item.CategoryList
