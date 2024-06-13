@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/mmcdole/gofeed"
@@ -8,18 +9,19 @@ import (
 )
 
 func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *connector.Response {
-	if !req.Params.Valid() {
+	config, err := req.GetValidDataSourceConfig()
+	if err != nil {
+		log.Println(err.Error())
 		return connector.NewFailResponse(connector.ConfigErrCode, "invalid config")
 	}
 
-	rssURL := req.Params.RssURL
+	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
 
 	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(rssURL)
+	feed, err := parser.ParseURL(config.RssURL)
 	if err != nil {
 		return connector.NewFailResponse(connector.InternalErrCode, err.Error())
 	}
-	log.Println(feed.Title)
 
 	meta := &connector.TableMeta{
 		TableName: feed.Title,

@@ -2,8 +2,7 @@ package connector
 
 import (
 	"encoding/json"
-	"strconv"
-	"strings"
+	"errors"
 
 	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/utils"
 )
@@ -19,41 +18,29 @@ const (
 )
 
 type Request struct {
-	Params  *DataSourceConfig `json:"params"`
-	Context string            `json:"context"`
+	Params  string `json:"params"`
+	Context string `json:"context"`
 }
 
-func (req *Request) UnmarshalJSON(data []byte) error {
-	type Alias Request
-	alias := &struct {
-		*Alias
-		Params json.RawMessage `json:"params"`
-	}{
-		Alias: (*Alias)(req),
+func (req *Request) GetValidDataSourceConfig() (*DataSourceConfig, error) {
+	var params = &struct {
+		ConfigStr string `json:"datasourceConfig"`
+	}{}
+
+	if err := json.Unmarshal([]byte(req.Params), &params); err != nil {
+		return nil, err
 	}
 
-	if err := json.Unmarshal(data, &alias); err != nil {
-		return err
+	config := &DataSourceConfig{}
+	if err := json.Unmarshal([]byte(params.ConfigStr), &config); err != nil {
+		return nil, err
 	}
 
-	unquote, err := strconv.Unquote(string(alias.Params))
-	if err != nil {
-		return err
+	if config != nil && config.Valid() {
+		return config, nil
 	}
 
-	// FIXME: 考虑用正则来优化
-	unquote = strings.ReplaceAll(unquote, "{\"datasourceConfig\":\"{", "{\"datasourceConfig\":{")
-	unquote = strings.ReplaceAll(unquote, "\"}\"}", "\"}}")
-
-	var params struct {
-		Config *DataSourceConfig `json:"datasourceConfig"`
-	}
-	if err = json.Unmarshal([]byte(unquote), &params); err != nil {
-		return err
-	}
-
-	req.Params = params.Config
-	return nil
+	return nil, errors.New("invalid config")
 }
 
 type Response struct {
