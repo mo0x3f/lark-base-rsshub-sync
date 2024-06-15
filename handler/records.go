@@ -38,10 +38,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		}
 		record.Data["title"] = item.Title
 		record.Data["description"] = item.Description
-		record.Data["link"] = map[string]string{
-			"name": "跳转链接",
-			"url":  item.Link,
-		}
+		record.Data["link"] = item.Link
 		record.Data["author"] = item.Authors
 		record.Data["category"] = item.CategoryList
 		if item.PubDate != 0 {
@@ -51,4 +48,18 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	}
 
 	return connector.NewSuccessResponse(result)
+}
+
+// 如果 RSS 都没有发布时间，则为全量覆盖模式
+func isRSSFeedNoDate(feed *rsshub.Feed) bool {
+	// 如果没有拉取到订阅信息，默认为增量
+	if len(feed.Items) == 0 {
+		return false
+	}
+	for _, item := range feed.Items {
+		if item.PubDate != 0 {
+			return false
+		}
+	}
+	return true
 }
