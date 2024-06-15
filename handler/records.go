@@ -10,20 +10,23 @@ import (
 )
 
 func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connector.Response {
+	// 获取订阅链接相关配置信息
 	config, err := req.GetValidDataSourceConfig()
 	if err != nil {
 		log.Println(err.Error())
-		return connector.NewFailResponse(connector.ConfigErrCode, "invalid config")
+		return connector.NewFailResponse(connector.ConfigErrCode, connector.ConfigErrorMsg)
 	}
 
 	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
 
+	// 请求 RSS 订阅并解析
 	feed, err := rsshub.NewService().Fetch(config.RssURL)
 	if err != nil {
 		log.Println(fmt.Sprintf("rss service err: %s", err.Error()))
-		return connector.NewFailResponse(connector.InternalErrCode, err.Error())
+		return connector.NewFailResponse(connector.InternalErrCode, connector.InternalErrorMsg)
 	}
 
+	// 序列化为 Base 连接器要求的格式
 	result := &connector.RecordsPage{
 		HasMore: false,
 		Records: make([]*connector.Record, 0),

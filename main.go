@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mo0x3f/lark-base-rsshub-sync/handler"
+	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
 	"github.com/mo0x3f/lark-base-rsshub-sync/middleware"
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
 )
@@ -33,7 +34,7 @@ func setupRouter() *gin.Engine {
 		req := &connector.Request{}
 		if err := c.ShouldBind(req); err != nil {
 			log.Println(fmt.Sprintf("parse req err: %+v", err))
-			c.JSON(http.StatusOK, connector.NewFailResponse(connector.ConfigErrCode, "invalid params"))
+			c.JSON(http.StatusOK, connector.NewFailResponse(connector.ConfigErrCode, connector.ConfigErrorMsg))
 			return
 		}
 		c.JSON(http.StatusOK, handler.NewConnectorHandler().GetTableMeta(req))
@@ -44,7 +45,7 @@ func setupRouter() *gin.Engine {
 		req := &connector.Request{}
 		if err := c.ShouldBind(req); err != nil {
 			log.Println(fmt.Sprintf("parse req err: %+v", err))
-			c.JSON(http.StatusOK, connector.NewFailResponse(connector.ConfigErrCode, "invalid params"))
+			c.JSON(http.StatusOK, connector.NewFailResponse(connector.ConfigErrCode, connector.ConfigErrorMsg))
 			return
 		}
 		c.JSON(http.StatusOK, handler.NewConnectorHandler().ListRecords(req))
@@ -53,7 +54,15 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
+func setupInfra() {
+	// 初始化国际化资源
+	if err := i18n.Init(); err != nil {
+		panic(fmt.Sprintf("i18n.Init() fail: %+v", err))
+	}
+}
+
 func main() {
+	setupInfra()
 	r := setupRouter()
 	r.Run(":8080")
 }

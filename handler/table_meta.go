@@ -12,7 +12,7 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 	config, err := req.GetValidDataSourceConfig()
 	if err != nil {
 		log.Println(err.Error())
-		return connector.NewFailResponse(connector.ConfigErrCode, "invalid config")
+		return connector.NewFailResponse(connector.ConfigErrCode, connector.ConfigErrorMsg)
 	}
 
 	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
@@ -20,7 +20,7 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 	feed, err := rsshub.NewService().Fetch(config.RssURL)
 	if err != nil {
 		log.Println(fmt.Sprintf("rss service err: %s", err.Error()))
-		return connector.NewFailResponse(connector.InternalErrCode, err.Error())
+		return connector.NewFailResponse(connector.InternalErrCode, connector.InternalErrorMsg)
 	}
 
 	meta := &connector.TableMeta{

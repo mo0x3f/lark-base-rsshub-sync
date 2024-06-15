@@ -3,7 +3,9 @@ package connector
 import (
 	"encoding/json"
 	"errors"
+	"log"
 
+	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
 	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/utils"
 )
 
@@ -16,6 +18,16 @@ const (
 	InternalErrCode   ResultCode = 1254500
 	PaymentErrCode    ResultCode = 1254505
 )
+
+type MessageKey string
+
+const (
+	InternalErrorMsg MessageKey = "internal_error"
+	ConfigErrorMsg   MessageKey = "config_error"
+)
+
+// 兜底错误提示
+const defaultErrorMsg = "{\"en\":\"Internal error\",\"zh\":\"系统异常，插件运行错误\"}"
 
 type Request struct {
 	Params  string `json:"params"`
@@ -44,9 +56,9 @@ func (req *Request) GetValidDataSourceConfig() (*DataSourceConfig, error) {
 }
 
 type Response struct {
-	Code ResultCode  `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
+	Code ResultCode  `json:"code,omitempty"`
+	Msg  string      `json:"msg,omitempty"`
+	Data interface{} `json:"data,omitempty"`
 }
 
 type RequestParams struct {
@@ -57,7 +69,7 @@ type RequestParams struct {
 }
 
 type DataSourceConfig struct {
-	RssURL string `json:"rss-url"`
+	RssURL string `json:"rss-url"` // RSS 订阅链接
 }
 
 func (config *DataSourceConfig) Valid() bool {
@@ -90,10 +102,28 @@ func NewSuccessResponse(data interface{}) *Response {
 	}
 }
 
-func NewFailResponse(code ResultCode, messageKey string) *Response {
+func NewFailResponse(code ResultCode, messageKey MessageKey) *Response {
+	msg := i18n.GetByKey("err_msg", string(messageKey))
+	if msg == nil {
+		log.Printf("message not found: %s\n", messageKey)
+		return &Response{
+			Code: code,
+			Msg:  defaultErrorMsg,
+		}
+	}
+
+	msgByte, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("json marshal fail: %s\n", err.Error())
+		return &Response{
+			Code: code,
+			Msg:  defaultErrorMsg,
+		}
+	}
+
 	return &Response{
 		Code: code,
-		Msg:  messageKey,
+		Msg:  string(msgByte),
 	}
 }
 
