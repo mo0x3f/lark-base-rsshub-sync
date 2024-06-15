@@ -17,9 +17,8 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		return connector.NewFailResponse(connector.ConfigErrCode, connector.ConfigErrorMsg)
 	}
 
-	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
-
 	// 请求 RSS 订阅并解析
+	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
 	feed, err := rsshub.NewService().Fetch(config.RssURL)
 	if err != nil {
 		log.Println(fmt.Sprintf("rss service err: %s", err.Error()))
@@ -38,7 +37,10 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		}
 		record.Data["title"] = item.Title
 		record.Data["description"] = item.Description
-		record.Data["link"] = item.Link
+		record.Data["link"] = map[string]string{
+			"name": item.Link,
+			"url":  item.Link,
+		}
 		record.Data["author"] = item.Authors
 		record.Data["category"] = item.CategoryList
 		if item.PubDate != 0 {

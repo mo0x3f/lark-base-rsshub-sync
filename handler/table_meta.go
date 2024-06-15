@@ -41,7 +41,7 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 			{
 				FieldID:   "link",
 				FieldName: "链接",
-				FieldType: 1,
+				FieldType: 10,
 				IsPrimary: false,
 			},
 			{
