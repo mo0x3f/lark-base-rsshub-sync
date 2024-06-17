@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mo0x3f/lark-base-rsshub-sync/handler"
@@ -61,8 +62,12 @@ func mustSetupInfra() {
 		panic(fmt.Sprintf("i18n.Init() fail: %+v", err))
 	}
 
+	// 读取环境变量
+	env := os.Getenv("APP_ENV")
+	log.Printf("init with env: %s\n", env)
+
 	// 初始化存储层
-	if err := repo.Init(); err != nil {
+	if err := repo.Init(env); err != nil {
 		panic(fmt.Sprintf("repo.Init() fail: %+v", err))
 	}
 }

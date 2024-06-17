@@ -2,7 +2,6 @@ package connector
 
 import (
 	"errors"
-	"os"
 
 	"github.com/mo0x3f/lark-base-rsshub-sync/repository/do/connector"
 )
@@ -19,9 +18,9 @@ type Repository interface {
 
 var factory Factory
 
-func Init() error {
+func Init(env string) error {
 	factory = &factoryImpl{}
-	factory.Init(os.Getenv("APP_ENV"))
+	factory.Init(env)
 	return nil
 }
 
