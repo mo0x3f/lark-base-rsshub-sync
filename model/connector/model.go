@@ -3,6 +3,7 @@ package connector
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
@@ -29,22 +30,38 @@ const (
 // 兜底错误提示
 const defaultErrorMsg = "{\"en\":\"Internal error\",\"zh\":\"系统异常，插件运行错误\"}"
 
+// 默认最大分页数
+const defaultMaxPageSize = 10
+
 type Request struct {
-	Params  string `json:"params"`
-	Context string `json:"context"`
+	Params    string         `json:"params"`
+	Context   string         `json:"context"`
+	ParamsObj *RequestParams `json:"-"`
+}
+
+func (req *Request) GetParams() *RequestParams {
+	if req.ParamsObj != nil {
+		return req.ParamsObj
+	}
+
+	obj := &RequestParams{}
+	if err := json.Unmarshal([]byte(req.Params), &obj); err != nil {
+		log.Printf("request params invalid: %s, %+v\n", req.Params, err)
+		return nil
+	}
+
+	req.ParamsObj = obj
+	return obj
 }
 
 func (req *Request) GetValidDataSourceConfig() (*DataSourceConfig, error) {
-	var params = &struct {
-		ConfigStr string `json:"datasourceConfig"`
-	}{}
-
-	if err := json.Unmarshal([]byte(req.Params), &params); err != nil {
-		return nil, err
+	params := req.GetParams()
+	if params == nil {
+		return nil, errors.New("invalid params")
 	}
 
 	config := &DataSourceConfig{}
-	if err := json.Unmarshal([]byte(params.ConfigStr), &config); err != nil {
+	if err := json.Unmarshal([]byte(params.Config), &config); err != nil {
 		return nil, err
 	}
 
@@ -53,6 +70,44 @@ func (req *Request) GetValidDataSourceConfig() (*DataSourceConfig, error) {
 	}
 
 	return nil, errors.New("invalid config")
+}
+
+type TableContext struct {
+	BaseID   string
+	TableID  string
+	TenantID string
+	UserID   string
+}
+
+func GenTableContext(req *Request, url string) (*TableContext, error) {
+	if req == nil || url == "" {
+		return nil, errors.New("invalid params")
+	}
+
+	context := &TableContext{}
+	reqCtx := &RequestContext{}
+	if err := json.Unmarshal([]byte(req.Context), &reqCtx); err != nil {
+		return nil, err
+	}
+
+	if reqCtx.ScriptArgs == nil || reqCtx.ScriptArgs.BaseOpenID == "" {
+		return nil, errors.New("empty user token")
+	}
+	context.UserID = reqCtx.ScriptArgs.BaseOpenID
+
+	if reqCtx.TenantKey == "" {
+		return nil, errors.New("empty tenant key")
+	}
+	context.TenantID = reqCtx.TenantKey
+
+	// 一个表只能有一个订阅源，使用订阅源url作为tableID
+	context.TableID = utils.Sha256Hash(url)
+	return context, nil
+}
+
+func (context *TableContext) GetTableKey() string {
+	// 租户维度使用 url 做隔离
+	return fmt.Sprintf("%s:%s", context.TenantID, context.TableID)
 }
 
 type Response struct {
@@ -68,8 +123,35 @@ type RequestParams struct {
 	MaxPageSize   int    `json:"maxPageSize"`
 }
 
+func (params *RequestParams) GetNextGUID() string {
+	if params.PageToken == "" {
+		return ""
+	}
+
+	data, err := utils.Base64Decode(params.PageToken)
+	if err != nil {
+		log.Printf("base64Decode fail. input: %s, %+v\n", params.PageToken, err)
+		return ""
+	}
+
+	pageToken := &PageToken{}
+	if err := json.Unmarshal([]byte(data), &pageToken); err != nil {
+		log.Printf("page token invalid: %s, %+v\n", params.PageToken, err)
+		return ""
+	}
+
+	return pageToken.NextGUID
+}
+
+func (params *RequestParams) GetMaxPageSize() int {
+	if params.MaxPageSize > 0 {
+		return params.MaxPageSize
+	}
+	return defaultMaxPageSize
+}
+
 type DataSourceConfig struct {
-	RssURL string `json:"rss-url"` // RSS 订阅链接
+	RssURL string `json:"rss-url"` // RssURL RSS 订阅链接
 }
 
 func (config *DataSourceConfig) Valid() bool {
@@ -77,11 +159,13 @@ func (config *DataSourceConfig) Valid() bool {
 }
 
 type RequestContext struct {
-	Bitable       *Bitable `json:"bitable"`
-	ScriptArgs    *Bitable `json:"scriptArgs"`
-	PackID        string   `json:"packID"`
-	TenantKey     string   `json:"tenantKey"`
-	UserTenantKey string   `json:"userTenantKey"`
+	Type          string      `json:"type"`
+	Bitable       *Bitable    `json:"bitable"`
+	ScriptArgs    *ScriptArgs `json:"scriptArgs"`
+	PackID        string      `json:"packID"`
+	TenantKey     string      `json:"tenantKey"`
+	UserTenantKey string      `json:"userTenantKey"`
+	BizInstanceID string      `json:"bizInstanceID"`
 }
 
 type Bitable struct {
@@ -92,6 +176,18 @@ type Bitable struct {
 type ScriptArgs struct {
 	ProjectURL string `json:"projectURL"`
 	BaseOpenID string `json:"baseOpenID"`
+}
+
+type PageToken struct {
+	NextGUID string `json:"next_guid"`
+}
+
+func GenPageToken(nextGUID string) string {
+	token := &PageToken{
+		NextGUID: nextGUID,
+	}
+	data, _ := json.Marshal(token)
+	return utils.Base64Encode(data)
 }
 
 func NewSuccessResponse(data interface{}) *Response {

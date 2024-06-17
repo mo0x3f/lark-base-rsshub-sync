@@ -1,5 +1,5 @@
 modules = ["go-1.21"]
-run = "go run main.go"
+run = "APP_ENV=replit go run main.go"
 
 [nix]
 channel = "stable-23_11"

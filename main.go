@@ -10,6 +10,7 @@ import (
 	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
 	"github.com/mo0x3f/lark-base-rsshub-sync/middleware"
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
+	repo "github.com/mo0x3f/lark-base-rsshub-sync/repository/connector"
 )
 
 func setupRouter() *gin.Engine {
@@ -54,15 +55,20 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
-func setupInfra() {
+func mustSetupInfra() {
 	// 初始化国际化资源
 	if err := i18n.Init(); err != nil {
 		panic(fmt.Sprintf("i18n.Init() fail: %+v", err))
 	}
+
+	// 初始化存储层
+	if err := repo.Init(); err != nil {
+		panic(fmt.Sprintf("repo.Init() fail: %+v", err))
+	}
 }
 
 func main() {
-	setupInfra()
+	mustSetupInfra()
 	r := setupRouter()
 	r.Run(":8080")
 }
