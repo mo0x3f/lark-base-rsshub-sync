@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
+	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/flag"
 	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/utils"
 )
 
@@ -31,7 +32,7 @@ const (
 const defaultErrorMsg = "{\"en\":\"Internal error\",\"zh\":\"系统异常，插件运行错误\"}"
 
 // 默认最大分页数
-const defaultMaxPageSize = 10
+const defaultMaxPageSize = 1000
 
 type Request struct {
 	Params    string         `json:"params"`
@@ -144,6 +145,9 @@ func (params *RequestParams) GetNextGUID() string {
 }
 
 func (params *RequestParams) GetMaxPageSize() int {
+	if flag.PageMonitorEnable() {
+		return flag.MonitorPageSize()
+	}
 	if params.MaxPageSize > 0 {
 		return params.MaxPageSize
 	}

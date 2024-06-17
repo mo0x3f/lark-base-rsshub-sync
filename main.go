@@ -11,6 +11,7 @@ import (
 	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
 	"github.com/mo0x3f/lark-base-rsshub-sync/middleware"
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
+	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/flag"
 	repo "github.com/mo0x3f/lark-base-rsshub-sync/repository/connector"
 )
 
@@ -65,6 +66,9 @@ func mustSetupInfra() {
 	// 读取环境变量
 	env := os.Getenv("APP_ENV")
 	log.Printf("init with env: %s\n", env)
+
+	// 设置调试环境变量
+	flag.SetPageMonitor(os.Getenv("PAGE_MONITOR"))
 
 	// 初始化存储层
 	if err := repo.Init(env); err != nil {
