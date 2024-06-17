@@ -56,7 +56,7 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 				FieldType: 5,
 				IsPrimary: false,
 				Property: &connector.Property{
-					Formatter: "yyyy/MM/dd",
+					Formatter: "yyyy/MM/dd HH:mm",
 				},
 			},
 			{
