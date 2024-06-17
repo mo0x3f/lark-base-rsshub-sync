@@ -17,6 +17,7 @@ func SetPageMonitor(value string) {
 		log.Fatalf("invalid page monitor: %s", value)
 	}
 	pageMonitor = pageSize
+	log.Printf("set page mintior: %d\n", pageMonitor)
 }
 
 func PageMonitorEnable() bool {

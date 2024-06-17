@@ -40,7 +40,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		return connector.NewFailResponse(connector.InternalErrCode, connector.InternalErrorMsg)
 	}
 
-	// 如果订阅内容没有发布时间，则认为全量覆盖，不需要做分页
+	// 如果订阅内容没有发布时间，则认为全量覆盖，不需要做分页与存储
 	overrideMode := isRSSFeedNoDate(feed)
 	log.Printf("override mode: %v\n", overrideMode)
 
@@ -83,11 +83,11 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	for _, item := range feed.Items {
 		recordDOs = append(recordDOs, feedItem2RecordDO(item))
 	}
-	hasUpdate := tableCache.Merge(recordDOs)
+	// 合并 & 按照 Feed 发布时间顺序排序
+	hasUpdate := tableCache.MergeAndSort(recordDOs)
 
 	// 更新缓存
 	// TODO: cache最大值限制 <= 11000
-	// TODO: 如果前后数据无变化，则不更新
 	if hasUpdate {
 		if err = repo.GetFactory().GetRepo().UpdateTable(tableKey, tableCache); err != nil {
 			// 更新缓存失败，不报错，继续返回订阅查询结果
@@ -95,13 +95,10 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		}
 	}
 
-	// 按照 Feed 发布时间倒序排序
-	sortedRecords := tableCache.SortByTimeDesc()
-
 	// 分页返回数据
 	guid := req.GetParams().GetNextGUID()
 	log.Printf("next guid: %s\n", guid)
-	perPage, nextGuid := sortedRecords.NextPage(guid, req.GetParams().GetMaxPageSize())
+	perPage, nextGuid := tableCache.RecordPage.NextPage(guid, req.GetParams().GetMaxPageSize())
 
 	result := &connector.RecordsPage{
 		HasMore:       nextGuid != "", // 如果返回了nextGuid，则认为还有下一页
