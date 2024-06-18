@@ -36,6 +36,29 @@ func (cache *TableMetaCache) MergeAndSort(items []*Record) bool {
 	return hasUpdate
 }
 
+// LimitAndSave RecordMap最大值限制，根据时间顺序淘汰
+func (cache *TableMetaCache) LimitAndSave(limit int) {
+	if len(cache.RecordPage) <= limit {
+		return
+	}
+
+	sort.Slice(cache.RecordPage, func(i, j int) bool {
+		return cache.RecordPage[i].PubDate > cache.RecordPage[j].PubDate
+	})
+
+	log.Printf("origin: %d; cut: %d\n", len(cache.RecordPage), len(cache.RecordPage)-limit)
+
+	// cut to limit
+	limitPage := cache.RecordPage[:limit]
+
+	// delete map value
+	newRecordMap := make(map[string]*Record)
+	for _, item := range limitPage {
+		newRecordMap[item.Guid] = item
+	}
+	cache.RecordMap = newRecordMap
+}
+
 func (cache *TableMetaCache) SortByTimeASC() RecordPage {
 	collection := make(RecordPage, 0)
 	for _, item := range cache.RecordMap {

@@ -11,6 +11,8 @@ import (
 	"github.com/mo0x3f/lark-base-rsshub-sync/service/rsshub"
 )
 
+const maxRecordLimit = 10000
+
 func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connector.Response {
 	// 获取订阅链接相关配置信息
 	config, err := req.GetValidDataSourceConfig()
@@ -87,8 +89,8 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	hasUpdate := tableCache.MergeAndSort(recordDOs)
 
 	// 更新缓存
-	// TODO: cache最大值限制 <= 11000
 	if hasUpdate {
+		tableCache.LimitAndSave(maxRecordLimit)
 		if err = repo.GetFactory().GetRepo().UpdateTable(tableKey, tableCache); err != nil {
 			// 更新缓存失败，不报错，继续返回订阅查询结果
 			log.Printf("merge and update table err: %s, %+v\n", tableKey, err)

@@ -55,3 +55,49 @@ func Test_NextPage(t *testing.T) {
 		t.Errorf("nextGuid2 != \"\"")
 	}
 }
+
+func Test_LimitAndSave(t *testing.T) {
+	cache := &TableMetaCache{
+		ID: "test",
+		RecordMap: map[string]*Record{
+			"1": {
+				Guid:    "1",
+				PubDate: 1,
+			},
+			"2": {
+				Guid:    "2",
+				PubDate: 2,
+			},
+			"3": {
+				Guid:    "3",
+				PubDate: 3,
+			},
+			"4": {
+				Guid:    "4",
+				PubDate: 4,
+			},
+		},
+	}
+
+	cache.RecordPage = cache.SortByTimeASC()
+
+	cache.LimitAndSave(2)
+	if len(cache.RecordPage) != 4 {
+		t.Errorf("len(cache.RecordPage) != 4")
+	}
+	if len(cache.RecordMap) != 2 {
+		t.Errorf("len(cache.RecordMap) != 2")
+	}
+	if cache.RecordMap["3"].Guid != "3" {
+		t.Errorf("cache.RecordMap[\"3\"].Guid != \"3\"")
+	}
+	if cache.RecordMap["4"].Guid != "4" {
+		t.Errorf("cache.RecordMap[\"4\"].Guid != \"4\"")
+	}
+	if _, ok := cache.RecordMap["1"]; ok {
+		t.Errorf("cache.RecordMap[\"1\"] should not exist")
+	}
+	if _, ok := cache.RecordMap["2"]; ok {
+		t.Errorf("cache.RecordMap[\"2\"] should not exist")
+	}
+}
