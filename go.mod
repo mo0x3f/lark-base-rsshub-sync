@@ -5,6 +5,8 @@ go 1.18
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/mmcdole/gofeed v1.3.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/pkg/errors v0.9.1
 	github.com/replit/database-go v0.1.0
 )
 

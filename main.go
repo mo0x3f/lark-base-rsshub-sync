@@ -13,6 +13,7 @@ import (
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
 	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/flag"
 	repo "github.com/mo0x3f/lark-base-rsshub-sync/repository/connector"
+	"github.com/mo0x3f/lark-base-rsshub-sync/service/cache"
 )
 
 func setupRouter() *gin.Engine {
@@ -76,8 +77,23 @@ func mustSetupInfra() {
 	}
 }
 
+func mustSetupCache() {
+	cacheMode := os.Getenv("CACHE_MODE")
+	log.Printf("init with cache mode: %s\n", cacheMode)
+
+	// 设置缓存过期时间，如不设置，则使用默认时间
+	flag.SetCacheExpiration(os.Getenv("CACHE_EXPIRATION"))
+
+	if err := cache.Init(cacheMode); err != nil {
+		panic(fmt.Sprintf("cache.Init() fail: %+v", err))
+	}
+}
+
 func main() {
 	mustSetupInfra()
+	mustSetupCache()
 	r := setupRouter()
-	r.Run(":8080")
+	if err := r.Run(":8080"); err != nil {
+		panic(fmt.Sprintf("start server error: %+v", err))
+	}
 }

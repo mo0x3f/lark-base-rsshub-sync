@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
+	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/flag"
 	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/utils"
 	repo "github.com/mo0x3f/lark-base-rsshub-sync/repository/connector"
 	do "github.com/mo0x3f/lark-base-rsshub-sync/repository/do/connector"
@@ -28,10 +29,8 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		return connector.NewFailResponse(connector.ConfigErrCode, connector.InternalErrorMsg)
 	}
 
-	// TODO: 可以根据 transactionID，减少请求频率；，同一个transaction只请求一次
 	// 请求 RSS 订阅并解析
-	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
-	feed, err := rsshub.NewService().Fetch(config.RssURL)
+	feed, err := rsshub.NewService().Fetch(config.RssURL, rsshub.DisableCache(flag.DisableCache()), rsshub.CacheExpiration(flag.GetCacheExpiration()))
 	if err != nil {
 		log.Println(fmt.Sprintf("rss service err: %s", err.Error()))
 		return connector.NewFailResponse(connector.InternalErrCode, connector.InternalErrorMsg)
@@ -121,7 +120,7 @@ func feed2RecordList(feed *rsshub.Feed) []*connector.Record {
 
 func feedItem2Record(item *rsshub.Item) *connector.Record {
 	record := &connector.Record{
-		PrimaryID: utils.Sha256Hash(item.Guid),
+		PrimaryID: utils.Sha256Hash(item.GUID),
 		Data:      make(map[string]interface{}),
 	}
 	record.Data["title"] = item.Title
@@ -140,7 +139,7 @@ func feedItem2Record(item *rsshub.Item) *connector.Record {
 
 func feedItem2RecordDO(item *rsshub.Item) *do.Record {
 	return &do.Record{
-		Guid:         item.Guid,
+		Guid:         item.GUID,
 		Title:        item.Title,
 		Description:  item.Description,
 		Link:         item.Link,
@@ -186,7 +185,7 @@ func newCacheWithFeed(tableID string, url string, feed *rsshub.Feed) *do.TableMe
 	}
 
 	for _, item := range feed.Items {
-		cache.RecordMap[item.Guid] = feedItem2RecordDO(item)
+		cache.RecordMap[item.GUID] = feedItem2RecordDO(item)
 	}
 
 	return cache
