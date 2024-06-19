@@ -1,31 +1,44 @@
 package connector
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/mo0x3f/lark-base-rsshub-sync/repository/do/connector"
 )
 
-type Factory interface {
-	Init(env string)
-	GetRepo() Repository
-}
+type provideRepo func() Repository
 
 type Repository interface {
 	UpdateTable(tableKey string, cache *connector.TableMetaCache) error
 	MGetTable(tableKey string) (*connector.TableMetaCache, error)
 }
 
-var factory Factory
+var provider provideRepo
 
 func Init(env string) error {
-	factory = &factoryImpl{}
-	factory.Init(env)
+	p, err := getProvider(env)
+	if err != nil {
+		return err
+	}
+
+	provider = p
 	return nil
 }
 
-func GetFactory() Factory {
-	return factory
+func getProvider(env string) (provideRepo, error) {
+	switch env {
+	case "local":
+		return func() Repository {
+			return &localCacheRepoImpl{}
+		}, nil
+	case "replit":
+		return func() Repository {
+			return &replitRepositoryImpl{}
+		}, nil
+	}
+	return nil, fmt.Errorf("env not found :%s", env)
 }
 
-var ErrCacheNotExist = errors.New("cache not exist")
+func Get() Repository {
+	return provider()
+}

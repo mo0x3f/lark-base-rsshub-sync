@@ -28,7 +28,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		return connector.NewFailResponse(connector.ConfigErrCode, connector.InternalErrorMsg)
 	}
 
-	// TODO: 可以根据 transactionID，减少请求频率
+	// TODO: 可以根据 transactionID，减少请求频率；，同一个transaction只请求一次
 	// 请求 RSS 订阅并解析
 	log.Println(fmt.Sprintf("target url: %s", config.RssURL))
 	feed, err := rsshub.NewService().Fetch(config.RssURL)
@@ -43,7 +43,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	}
 
 	// 如果订阅内容没有发布时间，则认为全量覆盖，不需要做分页与存储
-	overrideMode := isRSSFeedNoDate(feed)
+	overrideMode := feed.IsOverrideMode()
 	log.Printf("override mode: %v\n", overrideMode)
 
 	if overrideMode {
@@ -58,7 +58,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	tableKey := tableCtx.GetTableKey()
 	log.Printf("route tableKey: %s\n", tableKey)
 
-	tableCache, err := repo.GetFactory().GetRepo().MGetTable(tableCtx.GetTableKey())
+	tableCache, err := repo.Get().MGetTable(tableCtx.GetTableKey())
 	if err != nil {
 		// 查询缓存失败，不报错，继续执行
 		log.Printf("MGetTable fail err: %+v\n", err)
@@ -67,7 +67,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	// 第一次请求
 	if tableCache == nil {
 		tableCache = newCacheWithFeed(tableKey, config.RssURL, feed)
-		err = repo.GetFactory().GetRepo().UpdateTable(tableKey, tableCache)
+		err = repo.Get().UpdateTable(tableKey, tableCache)
 		if err != nil {
 			// 更新缓存失败，不报错，继续返回订阅查询结果
 			log.Printf("update table err: %s, %+v\n", tableKey, err)
@@ -91,7 +91,7 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 	// 更新缓存
 	if hasUpdate {
 		tableCache.LimitAndSave(maxRecordLimit)
-		if err = repo.GetFactory().GetRepo().UpdateTable(tableKey, tableCache); err != nil {
+		if err = repo.Get().UpdateTable(tableKey, tableCache); err != nil {
 			// 更新缓存失败，不报错，继续返回订阅查询结果
 			log.Printf("merge and update table err: %s, %+v\n", tableKey, err)
 		}
@@ -190,14 +190,4 @@ func newCacheWithFeed(tableID string, url string, feed *rsshub.Feed) *do.TableMe
 	}
 
 	return cache
-}
-
-// 如果 RSS 都没有发布时间，则为全量覆盖模式
-func isRSSFeedNoDate(feed *rsshub.Feed) bool {
-	for _, item := range feed.Items {
-		if item.PubDate != 0 {
-			return false
-		}
-	}
-	return true
 }

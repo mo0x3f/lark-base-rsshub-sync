@@ -11,21 +11,6 @@ type RSSHubService interface {
 	Fetch(subscribeURL string) (*Feed, error)
 }
 
-type Feed struct {
-	Title string
-	Items []*Item
-}
-
-type Item struct {
-	Guid         string
-	Title        string
-	Description  string
-	Link         string
-	Authors      []string
-	PubDate      int64
-	CategoryList []string
-}
-
 type rssHubServiceImpl struct{}
 
 func NewService() RSSHubService {
