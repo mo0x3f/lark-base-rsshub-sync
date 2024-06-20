@@ -25,7 +25,8 @@ type MessageKey string
 
 const (
 	InternalErrorMsg MessageKey = "internal_error"
-	ConfigErrorMsg   MessageKey = "config_error"
+	ConfigErrorMsg              = "config_error"
+	VerifyErrorMsg              = "verify_error"
 )
 
 // 兜底错误提示

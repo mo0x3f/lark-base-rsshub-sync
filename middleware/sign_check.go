@@ -7,17 +7,23 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mo0x3f/lark-base-rsshub-sync/infra/secret"
+	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
 )
 
 func VerifySignature() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		signature := c.GetHeader("X-Base-Signature")
+		if signature == "" {
+			return
+		}
+
 		timestamp := c.GetHeader("X-Base-Request-Timestamp")
 		nonce := c.GetHeader("X-Base-Request-Nonce")
-		signature := c.GetHeader("X-Base-Signature")
 
 		var buf bytes.Buffer
 		tee := io.TeeReader(c.Request.Body, &buf)
@@ -25,7 +31,13 @@ func VerifySignature() gin.HandlerFunc {
 		c.Request.Body = ioutil.NopCloser(&buf)
 
 		verifySig := genPostRequestSignature(nonce, timestamp, string(body), secret.GetVerifyToken())
-		log.Printf("verify signature: %s, result: %v\n", verifySig, signature == verifySig)
+		if signature == verifySig {
+			c.Next()
+			return
+		}
+
+		log.Printf("verify signature signature: %s verifySig: %s\n", signature, verifySig)
+		c.AbortWithStatusJSON(http.StatusOK, connector.NewFailResponse(connector.PermissionErrCode, connector.VerifyErrorMsg))
 	}
 }
 

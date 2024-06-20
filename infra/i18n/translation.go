@@ -11,6 +11,10 @@ var translation = `{
 	"config_error": {
 		"en": "invalid params",
       	"zh": "参数异常"
+	},
+	"verify_error": {
+		"en": "signature verify error",
+      	"zh": "请求签名校验失败"
 	}
   }
 }
