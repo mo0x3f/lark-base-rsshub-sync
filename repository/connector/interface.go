@@ -35,6 +35,10 @@ func getProvider(env string) (provideRepo, error) {
 		return func() Repository {
 			return &replitRepositoryImpl{}
 		}, nil
+	case "qcloud":
+		return func() Repository {
+			return &qcloudRepositoryImpl{}
+		}, nil
 	}
 	return nil, fmt.Errorf("env not found :%s", env)
 }
