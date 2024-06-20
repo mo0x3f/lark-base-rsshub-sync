@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mo0x3f/lark-base-rsshub-sync/handler"
 	"github.com/mo0x3f/lark-base-rsshub-sync/infra/i18n"
+	"github.com/mo0x3f/lark-base-rsshub-sync/infra/secret"
 	"github.com/mo0x3f/lark-base-rsshub-sync/middleware"
 	"github.com/mo0x3f/lark-base-rsshub-sync/model/connector"
 	"github.com/mo0x3f/lark-base-rsshub-sync/pkg/flag"
@@ -20,8 +21,9 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
-	r.Use(middleware.VerifySignature())
+	r.Use(middleware.LogLatency())
 	r.Use(middleware.RequestLoggerMiddleware())
+	r.Use(middleware.VerifySignature())
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
@@ -58,15 +60,11 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
-func mustSetupInfra() {
+func mustSetupInfra(env string) {
 	// 初始化国际化资源
 	if err := i18n.Init(); err != nil {
 		panic(fmt.Sprintf("i18n.Init() fail: %+v", err))
 	}
-
-	// 读取环境变量
-	env := os.Getenv("APP_ENV")
-	log.Printf("init with env: %s\n", env)
 
 	// 设置调试环境变量
 	flag.SetPageMonitor(os.Getenv("PAGE_MONITOR"))
@@ -89,9 +87,20 @@ func mustSetupCache() {
 	}
 }
 
+func mustInitSecret(env string) {
+	if err := secret.Init(env); err != nil {
+		panic(fmt.Sprintf("secret.Init() fail: %+v", err))
+	}
+}
+
 func main() {
-	mustSetupInfra()
+	// 读取环境变量
+	env := os.Getenv("APP_ENV")
+	log.Printf("init with env: %s\n", env)
+
+	mustSetupInfra(env)
 	mustSetupCache()
+	mustInitSecret(env)
 	r := setupRouter()
 	if err := r.Run(":8080"); err != nil {
 		panic(fmt.Sprintf("start server error: %+v", err))
