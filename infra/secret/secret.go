@@ -9,14 +9,15 @@ var verifyToken = ""
 
 func Init(env string) error {
 	switch env {
-	case "local":
-	case "replit":
+	case "local", "replit":
 		verifyToken = os.Getenv("BASE_VERIFY_TOKEN")
 		if verifyToken == "" {
 			return errors.New("verify token not found")
 		}
+		return nil
+	default:
+		return errors.New("verify token not found")
 	}
-	return nil
 }
 
 func GetVerifyToken() string {
