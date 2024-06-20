@@ -8,7 +8,7 @@ import (
 	"github.com/mo0x3f/lark-base-rsshub-sync/repository/do/connector"
 )
 
-const bucketDir = "/bucket/base/rss-connector/tablecache/"
+const bucketDir = "/root/bucket/tablecache/"
 
 type qcloudRepositoryImpl struct{}
 

@@ -29,6 +29,9 @@ RUN chmod +x ./main
 # Copy static resources
 COPY --from=builder /app/assets /root/assets
 
+# Create bucket directory
+RUN mkdir -p /root/bucket/tablecache
+
 # 暴露端口号
 EXPOSE 8080
 
