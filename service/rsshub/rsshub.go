@@ -85,7 +85,7 @@ func (hub *rssHubServiceImpl) Fetch(subscribeURL string, opts ...WithOptions) (*
 	}
 
 	data := &Feed{}
-	err := cache.GetService().GetAndRefresh(utils.Sha256Hash(subscribeURL), data, fetcher, defaultCacheExpiration*time.Minute)
+	err := cache.GetService().GetAndRefresh(utils.Sha256Hash(subscribeURL), data, fetcher, time.Duration(config.CacheExpiration)*time.Minute)
 	if err != nil {
 		return nil, err
 	}
