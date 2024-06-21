@@ -65,6 +65,18 @@ func (handler *connectorHandlerImpl) GetTableMeta(req *connector.Request) *conne
 				FieldType: 4,
 				IsPrimary: false,
 			},
+			{
+				FieldID:   "source",
+				FieldName: "RSS订阅源",
+				FieldType: 1,
+				IsPrimary: false,
+			},
+			{
+				FieldID:   "source_link",
+				FieldName: "RSS订阅源链接",
+				FieldType: 10,
+				IsPrimary: false,
+			},
 		},
 	}
 	return connector.NewSuccessResponse(meta)

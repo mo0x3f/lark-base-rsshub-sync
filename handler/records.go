@@ -106,6 +106,16 @@ func (handler *connectorHandlerImpl) ListRecords(req *connector.Request) *connec
 		NextPageToken: connector.GenPageToken(nextGuid),
 		Records:       recordDO2RecordList(perPage),
 	}
+
+	// 补充source字段
+	for _, record := range result.Records {
+		record.Data["source"] = feed.Title
+		record.Data["source_link"] = map[string]string{
+			"name": config.RssURL,
+			"url":  config.RssURL,
+		}
+	}
+
 	return connector.NewSuccessResponse(result)
 }
 
